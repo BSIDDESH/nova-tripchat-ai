@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova TripChat AI ✈️</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .header h1 { font-size: 2rem; margin-bottom: 5px; }
+        .header p { font-size: 1rem; opacity: 0.85; }
+
+        .quick-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .quick-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.4);
+            padding: 8px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .quick-btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: translateY(-2px);
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            height: 65vh;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user { flex-direction: row-reverse; }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .bot-avatar { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .user-avatar { background: linear-gradient(135deg, #f093fb, #f5576c); }
+
+        .bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .bot-bubble {
+            background: #f0f2ff;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+
+        .user-bubble {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .typing {
+            display: flex;
+            gap: 5px;
+            padding: 12px 16px;
+            background: #f0f2ff;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            width: fit-content;
+        }
+
+        .typing span {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounce 1.2s infinite;
+        }
+
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+
+        .chat-input-area {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e3ff;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .chat-input-area input:focus { border-color: #667eea; }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+        }
+
+        .send-btn:hover { transform: scale(1.1); }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal h3 { margin-bottom: 20px; color: #333; font-size: 1.2rem; }
+
+        .modal input, .modal select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e0e3ff;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .modal input:focus, .modal select:focus { border-color: #667eea; }
+
+        .modal-btns { display: flex; gap: 10px; margin-top: 5px; }
+
+        .modal-submit {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .modal-cancel {
+            flex: 1;
+            background: #f0f2ff;
+            color: #667eea;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>✈️ Nova TripChat AI</h1>
+    <p>Your AI-powered travel planner — Powered by Amazon Nova</p>
+</div>
+
+<div class="quick-buttons">
+    <button class="quick-btn" onclick="openModal('trip')">🗺️ Plan a Trip</button>
+    <button class="quick-btn" onclick="openModal('hotel')">🏨 Find Hotels</button>
+    <button class="quick-btn" onclick="openModal('budget')">💰 Estimate Budget</button>
+    <button class="quick-btn" onclick="openModal('packing')">🎒 Packing List</button>
+</div>
+
+<div class="chat-container">
+    <div class="chat-messages" id="chatMessages">
+        <div class="message">
+            <div class="avatar bot-avatar">🤖</div>
+            <div class="bubble bot-bubble">Hi! I'm <strong>Nova TripChat AI</strong> ✈️, your personal AI travel planner powered by Amazon Nova!
+
+I can help you:
+🗺️ Plan detailed trip itineraries
+🏨 Find the best hotels
+💰 Estimate your travel budget
+🎒 Create smart packing lists
+
+Where would you like to go? Just type your destination or use the quick buttons above! 🌍</div>
+        </div>
+    </div>
+    <div class="chat-input-area">
+        <input type="text" id="userInput" placeholder="Ask me anything about travel... 🌍" onkeypress="handleKey(event)" />
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+</div>
+
+<!-- Plan Trip Modal -->
+<div class="modal-overlay" id="tripModal">
+    <div class="modal">
+        <h3>🗺️ Plan Your Trip</h3>
+        <input type="text" id="tripDest" placeholder="Destination (e.g. Bali, Paris, Tokyo)" />
+        <input type="number" id="tripDays" placeholder="Number of days (e.g. 5)" min="1" max="30" />
+        <input type="number" id="tripBudget" placeholder="Total budget in USD (e.g. 1500)" />
+        <div class="modal-btns">
+            <button class="modal-cancel" onclick="closeModal('tripModal')">Cancel</button>
+            <button class="modal-submit" onclick="submitTrip()">Plan It! 🚀</button>
+        </div>
+    </div>
+</div>
+
+<!-- Hotels Modal -->
+<div class="modal-overlay" id="hotelModal">
+    <div class="modal">
+        <h3>🏨 Find Hotels</h3>
+        <input type="text" id="hotelDest" placeholder="Destination (e.g. Singapore)" />
+        <select id="hotelBudget">
+            <option value="budget">Budget (Under $50/night)</option>
+            <option value="mid-range" selected>Mid-range ($50-150/night)</option>
+            <option value="luxury">Luxury ($150+/night)</option>
+        </select>
+        <div class="modal-btns">
+            <button class="modal-cancel" onclick="closeModal('hotelModal')">Cancel</button>
+            <button class="modal-submit" onclick="submitHotel()">Find Hotels! 🏨</button>
+        </div>
+    </div>
+</div>
+
+<!-- Budget Modal -->
+<div class="modal-overlay" id="budgetModal">
+    <div class="modal">
+        <h3>💰 Estimate Budget</h3>
+        <input type="text" id="budgetDest" placeholder="Destination (e.g. Tokyo)" />
+        <input type="number" id="budgetDays" placeholder="Number of days (e.g. 7)" />
+        <input type="number" id="budgetTotal" placeholder="Your total budget in USD" />
+        <div class="modal-btns">
+            <button class="modal-cancel" onclick="closeModal('budgetModal')">Cancel</button>
+            <button class="modal-submit" onclick="submitBudget()">Estimate! 💰</button>
+        </div>
+    </div>
+</div>
+
+<!-- Packing Modal -->
+<div class="modal-overlay" id="packingModal">
+    <div class="modal">
+        <h3>🎒 Packing List</h3>
+        <input type="text" id="packDest" placeholder="Destination (e.g. Iceland)" />
+        <input type="number" id="packDays" placeholder="Number of days" />
+        <select id="packType">
+            <option value="adventure">Adventure / Hiking</option>
+            <option value="beach">Beach Holiday</option>
+            <option value="business">Business Trip</option>
+            <option value="family">Family Trip</option>
+            <option value="luxury">Luxury Travel</option>
+            <option value="backpacking" selected>Backpacking</option>
+        </select>
+        <div class="modal-btns">
+            <button class="modal-cancel" onclick="closeModal('packingModal')">Cancel</button>
+            <button class="modal-submit" onclick="submitPacking()">Generate List! 🎒</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+
+    function handleKey(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+
+    function addMessage(text, isUser) {
+        const container = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = 'message ' + (isUser ? 'user' : '');
+        div.innerHTML = `
+            <div class="avatar ${isUser ? 'user-avatar' : 'bot-avatar'}">${isUser ? '👤' : '🤖'}</div>
+            <div class="bubble ${isUser ? 'user-bubble' : 'bot-bubble'}">${text}</div>
+        `;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function showTyping() {
+        const container = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.id = 'typingIndicator';
+        div.innerHTML = `
+            <div class="avatar bot-avatar">🤖</div>
+            <div class="typing"><span></span><span></span><span></span></div>
+        `;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function removeTyping() {
+        const el = document.getElementById('typingIndicator');
+        if (el) el.remove();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const msg = input.value.trim();
+        if (!msg) return;
+
+        addMessage(msg, true);
+        input.value = '';
+        showTyping();
+
+        try {
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg, session_id: sessionId })
+            });
+            const data = await res.json();
+            removeTyping();
+            if (data.error) {
+                addMessage('❌ Error: ' + data.error, false);
+            } else {
+                addMessage(data.response, false);
+                sessionId = data.session_id;
+            }
+        } catch (err) {
+            removeTyping();
+            addMessage('❌ Connection error. Make sure Flask server is running!', false);
+        }
+    }
+
+    async function callAPI(endpoint, body, userMsg) {
+        addMessage(userMsg, true);
+        showTyping();
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            removeTyping();
+            if (data.error) {
+                addMessage('❌ Error: ' + data.error, false);
+            } else {
+                addMessage(data.response, false);
+            }
+        } catch (err) {
+            removeTyping();
+            addMessage('❌ Connection error!', false);
+        }
+    }
+
+    function openModal(type) {
+        document.getElementById(type + 'Modal').classList.add('active');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    function submitTrip() {
+        const dest = document.getElementById('tripDest').value;
+        const days = document.getElementById('tripDays').value;
+        const budget = document.getElementById('tripBudget').value;
+        if (!dest || !days || !budget) { alert('Please fill all fields!'); return; }
+        closeModal('tripModal');
+        callAPI('/plan-trip', { destination: dest, days: days, budget: budget },
+            `🗺️ Plan a ${days}-day trip to ${dest} with $${budget} budget`);
+    }
+
+    function submitHotel() {
+        const dest = document.getElementById('hotelDest').value;
+        const budget = document.getElementById('hotelBudget').value;
+        if (!dest) { alert('Please enter a destination!'); return; }
+        closeModal('hotelModal');
+        callAPI('/hotels', { destination: dest, budget_level: budget },
+            `🏨 Find ${budget} hotels in ${dest}`);
+    }
+
+    function submitBudget() {
+        const dest = document.getElementById('budgetDest').value;
+        const days = document.getElementById('budgetDays').value;
+        const total = document.getElementById('budgetTotal').value;
+        if (!dest || !days || !total) { alert('Please fill all fields!'); return; }
+        closeModal('budgetModal');
+        callAPI('/budget', { destination: dest, days: days, total_budget: total },
+            `💰 Estimate budget for ${days} days in ${dest} with $${total}`);
+    }
+
+    function submitPacking() {
+        const dest = document.getElementById('packDest').value;
+        const days = document.getElementById('packDays').value;
+        const type = document.getElementById('packType').value;
+        if (!dest || !days) { alert('Please fill all fields!'); return; }
+        closeModal('packingModal');
+        callAPI('/packing-list', { destination: dest, days: days, trip_type: type },
+            `🎒 Packing list for ${days} days ${type} trip to ${dest}`);
+    }
+</script>
+</body>
+</html>
